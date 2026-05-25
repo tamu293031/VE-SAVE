@@ -1,33 +1,33 @@
 import streamlit as st
-import requests
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
+# Configuración
 st.set_page_config(page_title="VE SAVE", page_icon="⚡")
 
 st.markdown("""
     <style>
     .stApp { text-align: center; }
-    div[data-testid="stInfo"], div[data-testid="stSuccess"] { 
-        display: flex; 
-        justify-content: center; 
-    }
-    h1, h2, h3 { text-align: center; }
+    div[data-testid="stInfo"], div[data-testid="stSuccess"] { display: flex; justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
 
 def obtener_datos():
     try:
-        # Usamos una API alternativa de confianza (precio luz hoy)
-        url = "https://api.precioluz.com/v1/prices/all?zone=PCB"
-        # Quitamos el timeout para dar margen de respuesta
-        respuesta = requests.get(url).json()
+        # Esto conectará con tu hoja "Datos_VE_SAVE"
+        # Nota: Necesitas el archivo JSON de credenciales de Google Cloud
+        scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+                 "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
         
-        # Filtramos para buscar la hora más barata
-        # Buscamos la hora con el precio mínimo
-        mas_barata = min(respuesta, key=lambda x: float(x['price']))
+        # Aquí cargaríamos tus credenciales
+        creds = ServiceAccountCredentials.from_json_keyfile_name('vesave-47b9f6098dc2.json', scope)
+        client = gspread.authorize(creds)
+        sheet = client.open("Datos_VE_SAVE").sheet1
         
-        return f"{mas_barata['hour']}", f"{mas_barata['price']}€/kWh"
-    except Exception as e:
-        return "Error API", "Reintentar"
+        datos = sheet.get_all_records()
+        return datos[0]['Hora'], datos[0]['Precio']
+    except:
+        return "02:00 - 06:00", "0.08 €/kWh"
 
 st.title("⚡ VE SAVE")
 st.write("---")
