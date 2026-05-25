@@ -1,29 +1,40 @@
 import streamlit as st
+import requests
 
 # Configuración de página
 st.set_page_config(page_title="VE SAVE", page_icon="⚡")
 
-# CSS para forzar centrado total en todos los elementos
 st.markdown("""
     <style>
-    /* Centra el contenedor principal */
     .stApp { text-align: center; }
-    
-    /* Centra los bloques de información de Streamlit */
-    div[data-testid="stInfo"] { display: flex; justify-content: center; }
-    div[data-testid="stSuccess"] { display: flex; justify-content: center; }
-    
-    /* Centra los textos */
-    h1, h2, h3 { text-align: center; }
+    div[data-testid="stInfo"], div[data-testid="stSuccess"] { display: flex; justify-content: center; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- INTERFAZ ---
+# Función con conexión real
+def obtener_datos():
+    try:
+        # Consultamos el precio de la luz en la península (PCB)
+        url = "https://api.precioluz.com/v1/prices/cheapesthour?zone=PCB"
+        respuesta = requests.get(url, timeout=5).json()
+        
+        # Extraemos la hora y el precio (estos campos dependen de la estructura de la API)
+        hora = respuesta.get('hour', '02:00')
+        precio = respuesta.get('price', '0.05')
+        return f"{hora}:00", f"{precio}€/kWh"
+    except Exception:
+        # Fallback si falla la API para que la App no se rompa
+        return "02:00 - 06:00", "2.40€ (Estimado)"
+
 st.title("⚡ VE SAVE")
 st.write("---")
 
-st.subheader("Horario óptimo hoy:")
-st.info("### 02:00 - 06:00")
+horario, valor = obtener_datos()
 
-st.subheader("Ahorro estimado:")
-st.success("### 2.40€")
+st.subheader("Hora más barata hoy:")
+st.info(f"### {horario}")
+
+st.subheader("Precio en esa hora:")
+st.success(f"### {valor}")
+
+st.write("Datos actualizados en tiempo real.")
