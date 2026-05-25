@@ -1,10 +1,8 @@
 import streamlit as st
 import requests
 
-# 1. Configuración obligatoria al principio
 st.set_page_config(page_title="VE SAVE", page_icon="⚡")
 
-# 2. CSS forzado para centrar todo
 st.markdown("""
     <style>
     .stApp { text-align: center; }
@@ -16,20 +14,21 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Función de datos
 def obtener_datos():
     try:
-        url = "https://api.precioluz.com/v1/prices/cheapesthour?zone=PCB"
-        # Ajustamos el timeout para que no bloquee la web
-        respuesta = requests.get(url, timeout=10).json()
+        # Usamos una API alternativa de confianza (precio luz hoy)
+        url = "https://api.precioluz.com/v1/prices/all?zone=PCB"
+        # Quitamos el timeout para dar margen de respuesta
+        respuesta = requests.get(url).json()
         
-        hora = respuesta.get('hour', 'Error')
-        precio = respuesta.get('price', '0.00')
-        return f"{hora}:00", f"{precio}€/kWh"
-    except:
-        return "Sin conexión", "Revisando..."
+        # Filtramos para buscar la hora más barata
+        # Buscamos la hora con el precio mínimo
+        mas_barata = min(respuesta, key=lambda x: float(x['price']))
+        
+        return f"{mas_barata['hour']}", f"{mas_barata['price']}€/kWh"
+    except Exception as e:
+        return "Error API", "Reintentar"
 
-# 4. Interfaz
 st.title("⚡ VE SAVE")
 st.write("---")
 
