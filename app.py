@@ -2,12 +2,13 @@ import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
+# Configuración de la página
 st.set_page_config(page_title="VE SAVE", page_icon="⚡")
 
 def obtener_datos():
     try:
-        # Construimos el diccionario de credenciales desde los Secrets por separado
-        # Esto evita errores de lectura de archivos JSON complejos
+        # Construimos el diccionario de credenciales utilizando los secretos
+        # Usamos replace('\\n', '\n') para asegurar que la clave privada sea válida
         creds_dict = {
             "type": "service_account",
             "project_id": "vesave",
@@ -21,26 +22,32 @@ def obtener_datos():
             "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/vesavebot%40vesave.iam.gserviceaccount.com"
         }
         
+        # Definimos los alcances necesarios para Google Sheets
         scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets']
         
-        # Autenticación
+        # Autenticación y conexión
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         
-        # Conexión a la hoja
+        # Abrimos la hoja de cálculo por su nombre exacto
         sheet = client.open("Datos_VE_SAVE").sheet1
         datos = sheet.get_all_records()
         
+        # Retornamos los valores de la primera fila
         if datos:
             return datos[0]['Hora'], datos[0]['Precio']
-        return "Vacío", "Sin datos"
+        return "Sin datos", "..."
         
     except Exception as e:
+        # Mostramos el error resumido para poder depurar
         return f"Error: {str(e)[:50]}", "Revisar configuración"
 
-# --- INTERFAZ ---
+# --- INTERFAZ DE USUARIO ---
 st.title("⚡ VE SAVE")
+
+# Obtenemos los datos
 horario, precio = obtener_datos()
 
+# Mostramos los resultados
 st.info(f"Hora más barata: {horario}")
 st.success(f"Precio: {precio}")
